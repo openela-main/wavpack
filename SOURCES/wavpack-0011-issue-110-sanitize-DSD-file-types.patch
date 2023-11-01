@@ -1,0 +1,35 @@
+commit 3915cf88c0cf2cf9806d7323071c9b856b6dc52b
+Author: Tomas Korbar <tkorbar@redhat.com>
+Date:   Tue May 17 18:11:33 2022 +0200
+
+    Fix CVE-2021-44269
+
+diff --git a/cli/dsdiff.c b/cli/dsdiff.c
+index 62d8a0c..fa69e32 100644
+--- a/cli/dsdiff.c
++++ b/cli/dsdiff.c
+@@ -284,6 +284,12 @@ int ParseDsdiffHeaderConfig (FILE *infile, char *infilename, char *fourcc, Wavpa
+                 return WAVPACK_SOFT_ERROR;
+             }
+             total_samples = dff_chunk_header.ckDataSize / config->num_channels;
++            
++            if (total_samples <= 0 || total_samples > MAX_WAVPACK_SAMPLES) {
++                error_line ("%s is not a valid .DFF file!", infilename);
++                return WAVPACK_SOFT_ERROR;
++            }
++
+             break;
+         }
+         else {          // just copy unknown chunks to output file
+diff --git a/cli/dsf.c b/cli/dsf.c
+index cd82ae9..fd6b2a5 100644
+--- a/cli/dsf.c
++++ b/cli/dsf.c
+@@ -121,6 +121,7 @@ int ParseDsfHeaderConfig (FILE *infile, char *infilename, char *fourcc, WavpackC
+ 
+     if (format_chunk.ckSize != sizeof (DSFFormatChunk) || format_chunk.formatVersion != 1 ||
+         format_chunk.formatID != 0 || format_chunk.blockSize != DSF_BLOCKSIZE || format_chunk.reserved ||
++        format_chunk.sampleCount <= 0 || format_chunk.sampleCount > MAX_WAVPACK_SAMPLES * 8 ||
+         (format_chunk.bitsPerSample != 1 && format_chunk.bitsPerSample != 8) ||
+         format_chunk.chanType < 1 || format_chunk.chanType > NUM_CHAN_TYPES) {
+             error_line ("%s is not a valid .DSF file!", infilename);
